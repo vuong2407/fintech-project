@@ -37,7 +37,7 @@ public class WalletBalance {
     private User user;
 
     @Column(nullable = false, length = 10)
-    private String currency; // USDT, ETH, BTC
+    private String currency;
 
     @Column(nullable = false, precision = 20, scale = 8)
     private BigDecimal balance;

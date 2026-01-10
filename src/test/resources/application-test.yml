@@ -1,56 +1,43 @@
 spring:
   application:
-    name: fintech-project
+    name: fintech-project-test
 
   datasource:
-    url: jdbc:h2:mem:fintech
+    url: jdbc:h2:mem:testdb
     driver-class-name: org.h2.Driver
     username: sa
     password: password
-
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
 
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
       ddl-auto: create-drop
-    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
+    show-sql: false
 
-server:
-  port: 8080
-
-logging:
-  level:
-    com.vuongnguyen: DEBUG
-    org.springframework.web: DEBUG
+  scheduling:
+    enabled: false
 
 resilience4j:
   retry:
     instances:
       fetchingBinancePricesRetry:
         max-attempts: 3
-        wait-duration: 500ms
-        enable-exponential-backoff: true
-        exponential-backoff-multiplier: 2
+        wait-duration: 100ms
+        enable-exponential-backoff: false
         retry-exceptions:
           - org.springframework.web.client.ResourceAccessException
           - org.springframework.web.client.HttpServerErrorException
+          - java.lang.IllegalStateException
         ignore-exceptions:
           - org.springframework.web.client.HttpClientErrorException
       fetchingHoubiPricesRetry:
         max-attempts: 3
-        wait-duration: 500ms
-        enable-exponential-backoff: true
-        exponential-backoff-multiplier: 2
+        wait-duration: 100ms
+        enable-exponential-backoff: false
         retry-exceptions:
           - org.springframework.web.client.ResourceAccessException
           - org.springframework.web.client.HttpServerErrorException
+          - java.lang.IllegalStateException
         ignore-exceptions:
           - org.springframework.web.client.HttpClientErrorException
 
@@ -59,18 +46,20 @@ resilience4j:
       fetchingBinancePricesCircuitBreaker:
         sliding-window-size: 10
         failure-rate-threshold: 50
-        wait-duration-in-open-state: 30s
+        wait-duration-in-open-state: 1s
         minimum-number-of-calls: 5
         permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
       fetchingHoubiPricesCircuitBreaker:
         sliding-window-size: 10
         failure-rate-threshold: 50
-        wait-duration-in-open-state: 30s
+        wait-duration-in-open-state: 1s
         minimum-number-of-calls: 5
         permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
 
 dce:
   binance:
-    url: https://api.binance.com/api/v3/ticker/bookTicker
+    url: http://mock-binance-api.test
   huobi:
-    url: https://api.huobi.pro/market/tickers
+    url: http://mock-huobi-api.test
