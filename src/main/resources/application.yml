@@ -53,6 +53,16 @@ resilience4j:
           - org.springframework.web.client.HttpServerErrorException
         ignore-exceptions:
           - org.springframework.web.client.HttpClientErrorException
+      executingUserTrading:
+        max-attempts: 3
+        wait-duration: 500ms
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - org.springframework.dao.OptimisticLockingFailureException
+        ignore-exceptions:
+          - com.vuongnguyen.fintech_project.exception.InsufficientBalanceException
+          - com.vuongnguyen.fintech_project.exception.PriceNotAvailableException
+          - com.vuongnguyen.fintech_project.exception.DuplicateOrderException
 
   circuitbreaker:
     instances:

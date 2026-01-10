@@ -6,6 +6,7 @@ import com.vuongnguyen.fintech_project.repository.AggregatedPriceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -48,7 +49,7 @@ public class PriceAggregationService {
         for (String symbol : SUPPORTED_SYMBOLS) {
             List<PriceData> symbolPrices = pricesBySymbol.get(symbol);
 
-            if (symbolPrices == null || symbolPrices.isEmpty()) {
+            if (CollectionUtils.isEmpty(symbolPrices)) {
                 log.warn("No price data available for symbol: {}", symbol);
                 continue;
             }

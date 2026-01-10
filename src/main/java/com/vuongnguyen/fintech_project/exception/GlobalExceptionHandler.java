@@ -1,4 +1,4 @@
-package com.vuongnguyen.fintech_project.execption;
+package com.vuongnguyen.fintech_project.exception;
 
 import com.vuongnguyen.fintech_project.dto.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -53,5 +53,35 @@ public class GlobalExceptionHandler {
         log.error("Unexpected error occurred: {}", ex.getMessage(), ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error("An internal server error occurred"));
+    }
+
+    @ExceptionHandler(InsufficientBalanceException.class)
+    public ResponseEntity<ApiResponse<Object>> handleInsufficientBalance(InsufficientBalanceException ex) {
+        log.warn("Insufficient balance: {}", ex.getMessage());
+        return ResponseEntity.badRequest().body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(PriceNotAvailableException.class)
+    public ResponseEntity<ApiResponse<Object>> handlePriceNotAvailable(PriceNotAvailableException ex) {
+        log.warn("Price not available: {}", ex.getMessage());
+        return ResponseEntity.badRequest().body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(DuplicateOrderException.class)
+    public ResponseEntity<ApiResponse<Object>> handleDuplicateOrder(DuplicateOrderException ex) {
+        log.warn("Duplicate order: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(OptimisticLockRetryExhaustedException.class)
+    public ResponseEntity<ApiResponse<Object>> handleOptimisticLockRetryExhausted(OptimisticLockRetryExhaustedException ex) {
+        log.error("Optimistic lock retry exhausted: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.error("Trade failed due to high concurrency. Please try again."));
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ApiResponse<Object>> handleTradingException(ResourceNotFoundException ex) {
+        log.error("The resource not found error: {}", ex.getMessage());
+        return ResponseEntity.badRequest().body(ApiResponse.error(ex.getMessage()));
     }
 }

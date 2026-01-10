@@ -1,5 +1,7 @@
 package com.vuongnguyen.fintech_project.entity;
 
+import com.vuongnguyen.fintech_project.dto.TradeDetails;
+import com.vuongnguyen.fintech_project.dto.TradeRequest;
 import com.vuongnguyen.fintech_project.enums.TradeSide;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -55,6 +57,9 @@ public class Trade{
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "client_order_id", unique = true, length = 50)
+    private String clientOrderId;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -62,5 +67,18 @@ public class Trade{
         if (Objects.nonNull(price) && Objects.nonNull(quantity)) {
             totalAmount = price.multiply(quantity);
         }
+    }
+
+    public Trade toEntity(User user, TradeRequest request, TradeDetails tradeDetails) {
+        this.setUser(user);
+        this.setSymbol(request.getSymbol());
+        this.setSide(request.getSide());
+        this.setPrice(tradeDetails.getPrice());
+        this.setQuantity(request.getQuantity());
+        this.setTotalAmount(tradeDetails.getTotalAmount());
+        this.setClientOrderId(request.getClientOrderId());
+        this.setCreatedAt(LocalDateTime.now());
+
+        return this;
     }
 }

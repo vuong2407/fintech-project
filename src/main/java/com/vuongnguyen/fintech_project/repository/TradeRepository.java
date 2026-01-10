@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface TradeRepository extends JpaRepository<Trade, Long> {
@@ -17,4 +18,6 @@ public interface TradeRepository extends JpaRepository<Trade, Long> {
 
     @Query("SELECT t FROM Trade t WHERE t.user.id = :userId ORDER BY t.createdAt DESC")
     List<Trade> findTradeHistoryByUserId(@Param("userId") Long userId);
+
+    Optional<Trade> findByClientOrderId(String clientOrderId);
 }
