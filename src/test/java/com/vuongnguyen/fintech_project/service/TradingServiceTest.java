@@ -1,5 +1,7 @@
 package com.vuongnguyen.fintech_project.service;
 
+import com.vuongnguyen.fintech_project.dto.TradeHistoryItem;
+import com.vuongnguyen.fintech_project.dto.TradeHistoryResponse;
 import com.vuongnguyen.fintech_project.dto.TradeRequest;
 import com.vuongnguyen.fintech_project.dto.TradeResponse;
 import com.vuongnguyen.fintech_project.entity.AggregatedPrice;
@@ -26,8 +28,16 @@ import org.springframework.dao.OptimisticLockingFailureException;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -501,5 +511,228 @@ class TradingServiceTest {
         Trade capturedTrade = tradeCaptor.getValue();
         assertEquals(new BigDecimal("50000.00"), capturedTrade.getPrice());
         assertEquals(TradeSide.SELL, capturedTrade.getSide());
+    }
+
+    @Test
+    void testGetUserTradeHistory_Success() {
+        Trade trade1 = new Trade();
+        trade1.setId(1L);
+        trade1.setUser(testUser);
+        trade1.setSymbol("BTCUSDT");
+        trade1.setSide(TradeSide.BUY);
+        trade1.setPrice(new BigDecimal("50001.00"));
+        trade1.setQuantity(new BigDecimal("0.5"));
+        trade1.setTotalAmount(new BigDecimal("25000.50"));
+        trade1.setCreatedAt(LocalDateTime.now());
+        trade1.setClientOrderId("order-1");
+
+        Trade trade2 = new Trade();
+        trade2.setId(2L);
+        trade2.setUser(testUser);
+        trade2.setSymbol("ETHUSDT");
+        trade2.setSide(TradeSide.SELL);
+        trade2.setPrice(new BigDecimal("3001.00"));
+        trade2.setQuantity(new BigDecimal("1.0"));
+        trade2.setTotalAmount(new BigDecimal("3001.00"));
+        trade2.setCreatedAt(LocalDateTime.now());
+        trade2.setClientOrderId("order-2");
+
+        Pageable pageable = PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<Trade> tradePage = new PageImpl<>(Arrays.asList(trade1, trade2), pageable, 2);
+
+        when(tradeRepository.findByUserId(1L, pageable)).thenReturn(tradePage);
+
+        TradeHistoryResponse response = tradingService.getUserTradeHistory(1L, 0, 20, null);
+
+        assertNotNull(response);
+        assertEquals(2, response.getTrades().size());
+        assertEquals(0, response.getCurrentPage());
+        assertEquals(1, response.getTotalPages());
+        assertEquals(2, response.getTotalElements());
+        assertEquals(20, response.getPageSize());
+    }
+
+    @Test
+    void testGetUserTradeHistory_WithSymbolFilter() {
+        Trade trade = new Trade();
+        trade.setId(1L);
+        trade.setUser(testUser);
+        trade.setSymbol("BTCUSDT");
+        trade.setSide(TradeSide.BUY);
+        trade.setPrice(new BigDecimal("50001.00"));
+        trade.setQuantity(new BigDecimal("0.5"));
+        trade.setTotalAmount(new BigDecimal("25000.50"));
+        trade.setCreatedAt(LocalDateTime.now());
+        trade.setClientOrderId("order-1");
+
+        Pageable pageable = PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<Trade> tradePage = new PageImpl<>(Collections.singletonList(trade), pageable, 1);
+
+        when(tradeRepository.findByUserIdAndSymbol(1L, "BTCUSDT", pageable)).thenReturn(tradePage);
+
+        TradeHistoryResponse response = tradingService.getUserTradeHistory(1L, 0, 20, "BTCUSDT");
+
+        assertNotNull(response);
+        assertEquals(1, response.getTrades().size());
+        assertEquals("BTCUSDT", response.getTrades().get(0).getSymbol());
+    }
+
+    @Test
+    void testGetUserTradeHistory_Empty() {
+        Pageable pageable = PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<Trade> tradePage = new PageImpl<>(Collections.emptyList(), pageable, 0);
+
+        when(tradeRepository.findByUserId(2L, pageable)).thenReturn(tradePage);
+
+        TradeHistoryResponse response = tradingService.getUserTradeHistory(2L, 0, 20, null);
+
+        assertNotNull(response);
+        assertEquals(0, response.getTrades().size());
+        assertEquals(0, response.getTotalElements());
+    }
+
+    @Test
+    void testGetUserTradeHistory_WithPagination() {
+        Trade trade = new Trade();
+        trade.setId(1L);
+        trade.setUser(testUser);
+        trade.setSymbol("BTCUSDT");
+        trade.setSide(TradeSide.BUY);
+        trade.setPrice(new BigDecimal("50001.00"));
+        trade.setQuantity(new BigDecimal("0.5"));
+        trade.setTotalAmount(new BigDecimal("25000.50"));
+        trade.setCreatedAt(LocalDateTime.now());
+        trade.setClientOrderId("order-1");
+
+        Pageable pageable = PageRequest.of(1, 20, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<Trade> tradePage = new PageImpl<>(Collections.singletonList(trade), pageable, 21);
+
+        when(tradeRepository.findByUserId(1L, pageable)).thenReturn(tradePage);
+
+        TradeHistoryResponse response = tradingService.getUserTradeHistory(1L, 1, 20, null);
+
+        assertNotNull(response);
+        assertEquals(1, response.getCurrentPage());
+        assertEquals(2, response.getTotalPages());
+        assertEquals(21, response.getTotalElements());
+    }
+
+    @Test
+    void testGetUserTradeHistory_CustomPageSize() {
+        Trade trade = new Trade();
+        trade.setId(1L);
+        trade.setUser(testUser);
+        trade.setSymbol("BTCUSDT");
+        trade.setSide(TradeSide.BUY);
+        trade.setPrice(new BigDecimal("50001.00"));
+        trade.setQuantity(new BigDecimal("0.5"));
+        trade.setTotalAmount(new BigDecimal("25000.50"));
+        trade.setCreatedAt(LocalDateTime.now());
+        trade.setClientOrderId("order-1");
+
+        Pageable pageable = PageRequest.of(0, 50, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<Trade> tradePage = new PageImpl<>(Collections.singletonList(trade), pageable, 1);
+
+        when(tradeRepository.findByUserId(1L, pageable)).thenReturn(tradePage);
+
+        TradeHistoryResponse response = tradingService.getUserTradeHistory(1L, 0, 50, null);
+
+        assertNotNull(response);
+        assertEquals(50, response.getPageSize());
+    }
+
+    @Test
+    void testGetUserTradeHistory_SymbolFilterWithPagination() {
+        Trade trade = new Trade();
+        trade.setId(1L);
+        trade.setUser(testUser);
+        trade.setSymbol("BTCUSDT");
+        trade.setSide(TradeSide.BUY);
+        trade.setPrice(new BigDecimal("50001.00"));
+        trade.setQuantity(new BigDecimal("0.5"));
+        trade.setTotalAmount(new BigDecimal("25000.50"));
+        trade.setCreatedAt(LocalDateTime.now());
+        trade.setClientOrderId("order-1");
+
+        Pageable pageable = PageRequest.of(1, 20, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<Trade> tradePage = new PageImpl<>(Collections.singletonList(trade), pageable, 25);
+
+        when(tradeRepository.findByUserIdAndSymbol(1L, "BTCUSDT", pageable)).thenReturn(tradePage);
+
+        TradeHistoryResponse response = tradingService.getUserTradeHistory(1L, 1, 20, "BTCUSDT");
+
+        assertNotNull(response);
+        assertEquals(1, response.getTrades().size());
+        assertEquals(1, response.getCurrentPage());
+        assertEquals("BTCUSDT", response.getTrades().get(0).getSymbol());
+    }
+
+    @Test
+    void testGetUserTradeHistory_VerifyTradeMapping() {
+        Trade trade = new Trade();
+        trade.setId(1L);
+        trade.setUser(testUser);
+        trade.setSymbol("BTCUSDT");
+        trade.setSide(TradeSide.BUY);
+        trade.setPrice(new BigDecimal("50001.00"));
+        trade.setQuantity(new BigDecimal("0.5"));
+        trade.setTotalAmount(new BigDecimal("25000.50"));
+        trade.setCreatedAt(LocalDateTime.now());
+        trade.setClientOrderId("order-1");
+
+        Pageable pageable = PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<Trade> tradePage = new PageImpl<>(Collections.singletonList(trade), pageable, 1);
+
+        when(tradeRepository.findByUserId(1L, pageable)).thenReturn(tradePage);
+
+        TradeHistoryResponse response = tradingService.getUserTradeHistory(1L, 0, 20, null);
+
+        assertNotNull(response);
+        assertEquals(1, response.getTrades().size());
+        TradeHistoryItem item = response.getTrades().get(0);
+        assertEquals(1L, item.getTradeId());
+        assertEquals("BTCUSDT", item.getSymbol());
+        assertEquals(TradeSide.BUY, item.getSide());
+        assertEquals(0, new BigDecimal("50001.00").compareTo(item.getPrice()));
+        assertEquals(0, new BigDecimal("0.5").compareTo(item.getQuantity()));
+        assertEquals(0, new BigDecimal("25000.50").compareTo(item.getTotalAmount()));
+        assertEquals("order-1", item.getClientOrderId());
+    }
+
+    @Test
+    void testGetUserTradeHistory_MultipleSymbols() {
+        Trade btcTrade = new Trade();
+        btcTrade.setId(1L);
+        btcTrade.setUser(testUser);
+        btcTrade.setSymbol("BTCUSDT");
+        btcTrade.setSide(TradeSide.BUY);
+        btcTrade.setPrice(new BigDecimal("50001.00"));
+        btcTrade.setQuantity(new BigDecimal("0.5"));
+        btcTrade.setTotalAmount(new BigDecimal("25000.50"));
+        btcTrade.setCreatedAt(LocalDateTime.now());
+        btcTrade.setClientOrderId("order-1");
+
+        Trade ethTrade = new Trade();
+        ethTrade.setId(2L);
+        ethTrade.setUser(testUser);
+        ethTrade.setSymbol("ETHUSDT");
+        ethTrade.setSide(TradeSide.SELL);
+        ethTrade.setPrice(new BigDecimal("3001.00"));
+        ethTrade.setQuantity(new BigDecimal("1.0"));
+        ethTrade.setTotalAmount(new BigDecimal("3001.00"));
+        ethTrade.setCreatedAt(LocalDateTime.now());
+        ethTrade.setClientOrderId("order-2");
+
+        Pageable pageable = PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<Trade> tradePage = new PageImpl<>(Arrays.asList(btcTrade, ethTrade), pageable, 2);
+
+        when(tradeRepository.findByUserId(1L, pageable)).thenReturn(tradePage);
+
+        TradeHistoryResponse response = tradingService.getUserTradeHistory(1L, 0, 20, null);
+
+        assertNotNull(response);
+        assertEquals(2, response.getTrades().size());
+        assertEquals("BTCUSDT", response.getTrades().get(0).getSymbol());
+        assertEquals("ETHUSDT", response.getTrades().get(1).getSymbol());
     }
 }

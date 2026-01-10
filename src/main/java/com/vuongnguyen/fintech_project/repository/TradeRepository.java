@@ -1,6 +1,8 @@
 package com.vuongnguyen.fintech_project.repository;
 
 import com.vuongnguyen.fintech_project.entity.Trade;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -20,4 +22,8 @@ public interface TradeRepository extends JpaRepository<Trade, Long> {
     List<Trade> findTradeHistoryByUserId(@Param("userId") Long userId);
 
     Optional<Trade> findByClientOrderId(String clientOrderId);
+
+    Page<Trade> findByUserIdAndSymbol(Long userId, String symbol, Pageable pageable);
+
+    Page<Trade> findByUserId(Long userId, Pageable pageable);
 }

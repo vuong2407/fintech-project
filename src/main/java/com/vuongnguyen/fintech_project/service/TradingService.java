@@ -1,6 +1,8 @@
 package com.vuongnguyen.fintech_project.service;
 
 import com.vuongnguyen.fintech_project.dto.TradeDetails;
+import com.vuongnguyen.fintech_project.dto.TradeHistoryItem;
+import com.vuongnguyen.fintech_project.dto.TradeHistoryResponse;
 import com.vuongnguyen.fintech_project.dto.TradeRequest;
 import com.vuongnguyen.fintech_project.dto.TradeResponse;
 import com.vuongnguyen.fintech_project.entity.AggregatedPrice;
@@ -20,6 +22,10 @@ import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
@@ -165,5 +171,22 @@ public class TradingService {
 
         assetBalance.setBalance(assetBalance.getBalance().subtract(quantity));
         usdtBalance.setBalance(usdtBalance.getBalance().add(tradeDetails.getTotalAmount()));
+    }
+
+    public TradeHistoryResponse getUserTradeHistory(Long userId, int page, int size, String symbol) {
+        log.debug("Fetching trade history for user: {}, page: {}, size: {}, symbol: {}",
+                userId, page, size, symbol);
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+
+        Page<Trade> trades = symbol != null && !symbol.isEmpty() ? tradeRepository.findByUserIdAndSymbol(userId, symbol, pageable)
+                : tradeRepository.findByUserId(userId, pageable);
+
+        List<TradeHistoryItem> tradeHistoryItems = trades.stream()
+                .map(trade -> new TradeHistoryItem().toTradeHistoryItem(trade))
+                .toList();
+
+        return new TradeHistoryResponse(tradeHistoryItems, trades.getNumber(), trades.getTotalPages(),
+                trades.getTotalElements(), trades.getSize());
     }
 }

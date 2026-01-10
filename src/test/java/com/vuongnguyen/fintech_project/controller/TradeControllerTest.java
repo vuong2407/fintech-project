@@ -1,6 +1,8 @@
 package com.vuongnguyen.fintech_project.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.vuongnguyen.fintech_project.dto.TradeHistoryItem;
+import com.vuongnguyen.fintech_project.dto.TradeHistoryResponse;
 import com.vuongnguyen.fintech_project.dto.TradeRequest;
 import com.vuongnguyen.fintech_project.dto.TradeResponse;
 import com.vuongnguyen.fintech_project.enums.TradeSide;
@@ -23,6 +25,8 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Collections;
 
 import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.ArgumentMatchers.any;
@@ -31,6 +35,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -569,5 +574,193 @@ class TradeControllerTest {
                 .andExpect(status().isBadRequest());
 
         verify(tradingService, never()).executeUserTrading(any(TradeRequest.class));
+    }
+
+    @Test
+    void testGetUserTradeHistory_Success() throws Exception {
+        TradeHistoryItem btcTrade = new TradeHistoryItem();
+        btcTrade.setTradeId(1L);
+        btcTrade.setSymbol("BTCUSDT");
+        btcTrade.setSide(TradeSide.BUY);
+        btcTrade.setPrice(new BigDecimal("50001.00"));
+        btcTrade.setQuantity(new BigDecimal("0.5"));
+        btcTrade.setTotalAmount(new BigDecimal("25000.50"));
+        btcTrade.setCreatedAt(LocalDateTime.now());
+        btcTrade.setClientOrderId("order-1");
+
+        TradeHistoryItem ethTrade = new TradeHistoryItem();
+        ethTrade.setTradeId(2L);
+        ethTrade.setSymbol("ETHUSDT");
+        ethTrade.setSide(TradeSide.SELL);
+        ethTrade.setPrice(new BigDecimal("3001.00"));
+        ethTrade.setQuantity(new BigDecimal("1.0"));
+        ethTrade.setTotalAmount(new BigDecimal("3001.00"));
+        ethTrade.setCreatedAt(LocalDateTime.now());
+        ethTrade.setClientOrderId("order-2");
+
+        TradeHistoryResponse response = new TradeHistoryResponse(Arrays.asList(btcTrade, ethTrade), 0, 1, 2, 20);
+        when(tradingService.getUserTradeHistory(1L, 0, 20, null)).thenReturn(response);
+
+        mockMvc.perform(get("/api/v1/trades/history/user/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success", notNullValue()))
+                .andExpect(jsonPath("$.data", notNullValue()));
+
+        verify(tradingService, times(1)).getUserTradeHistory(1L, 0, 20, null);
+    }
+
+    @Test
+    void testGetUserTradeHistory_WithSymbolFilter() throws Exception {
+        TradeHistoryItem btcTrade = new TradeHistoryItem();
+        btcTrade.setTradeId(1L);
+        btcTrade.setSymbol("BTCUSDT");
+        btcTrade.setSide(TradeSide.BUY);
+        btcTrade.setPrice(new BigDecimal("50001.00"));
+        btcTrade.setQuantity(new BigDecimal("0.5"));
+        btcTrade.setTotalAmount(new BigDecimal("25000.50"));
+        btcTrade.setCreatedAt(LocalDateTime.now());
+        btcTrade.setClientOrderId("order-1");
+
+        TradeHistoryResponse response = new TradeHistoryResponse(Collections.singletonList(btcTrade), 0, 1, 1, 20);
+        when(tradingService.getUserTradeHistory(1L, 0, 20, "BTCUSDT")).thenReturn(response);
+
+        mockMvc.perform(get("/api/v1/trades/history/user/1?symbol=BTCUSDT"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data", notNullValue()));
+
+        verify(tradingService, times(1)).getUserTradeHistory(1L, 0, 20, "BTCUSDT");
+    }
+
+    @Test
+    void testGetUserTradeHistory_WithPagination() throws Exception {
+        TradeHistoryItem trade = new TradeHistoryItem();
+        trade.setTradeId(1L);
+        trade.setSymbol("BTCUSDT");
+        trade.setSide(TradeSide.BUY);
+        trade.setPrice(new BigDecimal("50001.00"));
+        trade.setQuantity(new BigDecimal("0.5"));
+        trade.setTotalAmount(new BigDecimal("25000.50"));
+        trade.setCreatedAt(LocalDateTime.now());
+        trade.setClientOrderId("order-1");
+
+        TradeHistoryResponse response = new TradeHistoryResponse(Collections.singletonList(trade), 1, 2, 25, 20);
+        when(tradingService.getUserTradeHistory(1L, 1, 20, null)).thenReturn(response);
+
+        mockMvc.perform(get("/api/v1/trades/history/user/1?page=1&size=20"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data", notNullValue()));
+
+        verify(tradingService, times(1)).getUserTradeHistory(1L, 1, 20, null);
+    }
+
+    @Test
+    void testGetUserTradeHistory_Empty() throws Exception {
+        TradeHistoryResponse response = new TradeHistoryResponse(Collections.emptyList(), 0, 0, 0, 20);
+        when(tradingService.getUserTradeHistory(2L, 0, 20, null)).thenReturn(response);
+
+        mockMvc.perform(get("/api/v1/trades/history/user/2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data", notNullValue()));
+
+        verify(tradingService, times(1)).getUserTradeHistory(2L, 0, 20, null);
+    }
+
+    @Test
+    void testGetUserTradeHistory_CustomPageSize() throws Exception {
+        TradeHistoryItem trade = new TradeHistoryItem();
+        trade.setTradeId(1L);
+        trade.setSymbol("BTCUSDT");
+        trade.setSide(TradeSide.BUY);
+        trade.setPrice(new BigDecimal("50001.00"));
+        trade.setQuantity(new BigDecimal("0.5"));
+        trade.setTotalAmount(new BigDecimal("25000.50"));
+        trade.setCreatedAt(LocalDateTime.now());
+        trade.setClientOrderId("order-1");
+
+        TradeHistoryResponse response = new TradeHistoryResponse(Collections.singletonList(trade), 0, 1, 1, 50);
+        when(tradingService.getUserTradeHistory(1L, 0, 50, null)).thenReturn(response);
+
+        mockMvc.perform(get("/api/v1/trades/history/user/1?size=50"))
+                .andExpect(status().isOk());
+
+        verify(tradingService, times(1)).getUserTradeHistory(1L, 0, 50, null);
+    }
+
+    @Test
+    void testGetUserTradeHistory_SymbolCaseInsensitive() throws Exception {
+        TradeHistoryItem trade = new TradeHistoryItem();
+        trade.setTradeId(1L);
+        trade.setSymbol("BTCUSDT");
+        trade.setSide(TradeSide.BUY);
+        trade.setPrice(new BigDecimal("50001.00"));
+        trade.setQuantity(new BigDecimal("0.5"));
+        trade.setTotalAmount(new BigDecimal("25000.50"));
+        trade.setCreatedAt(LocalDateTime.now());
+        trade.setClientOrderId("order-1");
+
+        TradeHistoryResponse response = new TradeHistoryResponse(Collections.singletonList(trade), 0, 1, 1, 20);
+        when(tradingService.getUserTradeHistory(1L, 0, 20, "BTCUSDT")).thenReturn(response);
+
+        mockMvc.perform(get("/api/v1/trades/history/user/1?symbol=btcusdt"))
+                .andExpect(status().isOk());
+
+        verify(tradingService, times(1)).getUserTradeHistory(1L, 0, 20, "BTCUSDT");
+    }
+
+    @Test
+    void testGetUserTradeHistory_SymbolFilterWithPagination() throws Exception {
+        TradeHistoryItem trade = new TradeHistoryItem();
+        trade.setTradeId(1L);
+        trade.setSymbol("BTCUSDT");
+        trade.setSide(TradeSide.BUY);
+        trade.setPrice(new BigDecimal("50001.00"));
+        trade.setQuantity(new BigDecimal("0.5"));
+        trade.setTotalAmount(new BigDecimal("25000.50"));
+        trade.setCreatedAt(LocalDateTime.now());
+        trade.setClientOrderId("order-1");
+
+        TradeHistoryResponse response = new TradeHistoryResponse(Collections.singletonList(trade), 1, 2, 25, 20);
+        when(tradingService.getUserTradeHistory(1L, 1, 20, "BTCUSDT")).thenReturn(response);
+
+        mockMvc.perform(get("/api/v1/trades/history/user/1?page=1&size=20&symbol=BTCUSDT"))
+                .andExpect(status().isOk());
+
+        verify(tradingService, times(1)).getUserTradeHistory(1L, 1, 20, "BTCUSDT");
+    }
+
+    @Test
+    void testGetUserTradeHistory_InvalidUserId() throws Exception {
+        mockMvc.perform(get("/api/v1/trades/history/user/0"))
+                .andExpect(status().isInternalServerError());
+    }
+
+    @Test
+    void testGetUserTradeHistory_NegativeUserId() throws Exception {
+        mockMvc.perform(get("/api/v1/trades/history/user/-1"))
+                .andExpect(status().isInternalServerError());
+    }
+
+    @Test
+    void testGetUserTradeHistory_NonNumericUserId() throws Exception {
+        mockMvc.perform(get("/api/v1/trades/history/user/abc"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void testGetUserTradeHistory_InvalidPageSize() throws Exception {
+        mockMvc.perform(get("/api/v1/trades/history/user/1?size=0"))
+                .andExpect(status().isInternalServerError());
+    }
+
+    @Test
+    void testGetUserTradeHistory_PageSizeExceedsMax() throws Exception {
+        mockMvc.perform(get("/api/v1/trades/history/user/1?size=101"))
+                .andExpect(status().isInternalServerError());
+    }
+
+    @Test
+    void testGetUserTradeHistory_InvalidPageNumber() throws Exception {
+        mockMvc.perform(get("/api/v1/trades/history/user/1?page=-1"))
+                .andExpect(status().isInternalServerError());
     }
 }
