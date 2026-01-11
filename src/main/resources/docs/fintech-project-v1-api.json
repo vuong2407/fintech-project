@@ -1,0 +1,151 @@
+{
+	"info": {
+		"_postman_id": "001eb4db-03cc-436a-92b6-b29b9bf1b0a6",
+		"name": "V1 API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "16466957",
+		"_collection_link": "https://shopee-1864.postman.co/workspace/fintech-project~d22aba0d-b43d-4a7a-a2ac-52bb96841deb/collection/16466957-001eb4db-03cc-436a-92b6-b29b9bf1b0a6?action=share&source=collection_link&creator=16466957"
+	},
+	"item": [
+		{
+			"name": "get latest price",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base-url}}/prices/latest?symbol=ETHUSDT",
+					"host": [
+						"{{base-url}}"
+					],
+					"path": [
+						"prices",
+						"latest"
+					],
+					"query": [
+						{
+							"key": "symbol",
+							"value": "ETHUSDT"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "execute trade",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"userId\": 1,\n    \"symbol\": \"BTCUSDT\",\n    \"side\": \"SELL\",\n    \"quantity\": \"1\",\n    \"clientOrderId\": \"order-123x5\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base-url}}/trades",
+					"host": [
+						"{{base-url}}"
+					],
+					"path": [
+						"trades"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "trade history",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base-url}}/trades/history/user/1",
+					"host": [
+						"{{base-url}}"
+					],
+					"path": [
+						"trades",
+						"history",
+						"user",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "wallet balance",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base-url}}/wallets/user/1",
+					"host": [
+						"{{base-url}}"
+					],
+					"path": [
+						"wallets",
+						"user",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "wallet balance by currency",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base-url}}/wallets/user/1/currency/BTC",
+					"host": [
+						"{{base-url}}"
+					],
+					"path": [
+						"wallets",
+						"user",
+						"1",
+						"currency",
+						"BTC"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base-url",
+			"value": ""
+		}
+	]
+}
